@@ -1,0 +1,2251 @@
+/**
+ * @file
+ * A JavaScript file for the theme.
+ *
+ * In order for this JavaScript to be loaded on pages, see the instructions in
+ * the README.txt next to this file.
+ */
+
+
+(function ($, Drupal, window, document, undefined) {
+
+
+
+
+    $(document).ready(function(){
+
+        // Sentry error tracking
+        var ravenOptions = {
+            whitelistUrls: [
+                'squawalpine.com'
+            ],
+            ignoreErrors: [
+                /SecurityError: Blocked a frame with origin.*/,
+                'Invalid argument.'
+            ],
+            ignoreUrls: [
+                // Chrome extensions
+                /extensions\//i,
+                /^chrome:\/\//i
+            ]
+        };
+        Raven.config('https://da2116f7ae7d4611920808ed4bfc9ba8@sentry.io/1237028',ravenOptions).install();
+
+        // Define if on mobile (based on CCS media Queries : Device < 800px wide)
+        var resizeTimer;
+        DEVICE.timerResize();
+	$(window).resize(function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function() { DEVICE.timerResize(); }, 100);
+	});
+
+        /* ---------------------------------------- */
+	/* TABLE FOR SMALL SCREEN */
+	/* ---------------------------------------- */
+	$(".tpl table td").each(function(index) {
+            var indexTd = $(this).index();
+            var textTh = $.trim($(this).parent().parent().parent().find("thead tr th").eq(indexTd).text());
+            if (textTh === "")$(this).addClass("empty-row");
+            $(this).attr("data-label",textTh);
+	});
+	//reattach behaviors after segments come back
+	/*$(document).on("acquiaLiftWebSegments", function(segment, segments){
+		Drupal.attachBehaviors();	
+	});*/
+
+  /* ------------------ */
+  /* FLEX SLIDER */
+  /* ------------------ */
+  //Drupal.behaviors.flexsliders =  {
+    //attach: function (context, settings) {
+      if ($('.slideshow').length){
+        $('.slideshow').flexslider({
+          animation: "fade",
+          slideshow: false,
+          start: function(slider){
+            $('.flexslider ol.flex-control-nav')
+            .wrap( "<div class='flex-control-wrapper'></div>" );
+          }
+        });
+      }
+
+      if ($('#slideshowWithCarousel').length){
+
+        $('#carouselWithSlideshow').flexslider({
+          animation: "slide",
+          controlNav: false,
+          animationLoop: false,
+          slideshow: false,
+          itemWidth: 110,
+          itemMargin: 10,
+          maxItems: 8,
+          move: 1,
+          asNavFor: '#slideshowWithCarousel'
+        });
+
+        $('#slideshowWithCarousel').flexslider({
+            animation: "fade",
+            controlNav: false,
+            animationLoop: false,
+            slideshow: false,
+            video: true,
+            sync: "#carouselWithSlideshow"
+        });
+
+      }
+      
+
+      /* ------------------ */
+      /* HOME SLIDER */
+      /* ------------------ */
+      if ($('.home-slider').length){
+        $('.home-slider').flexslider({
+          animation: "fade",
+          slideshow: false,
+          start: function(slider){
+            //Reposition Text
+            HOME.reposTextSlider(slider.count);
+            // Wrap the pager
+            $('.flexslider ol.flex-control-nav')
+            .wrap( "<div class='flex-control-wrapper'></div>" );
+          }
+        });
+      }
+
+      if ($('.carrousel').length){
+        $('.carrousel').flexslider({
+          animation: "slide",
+          animationLoop: true,
+          slideshowSpeed: 3000,
+          /*minItems: 4,*/
+          controlNav: false,
+          directionNav: false,
+          slideshow: true,
+          itemWidth: 210,
+          start: function(slider){
+              //$('body').removeClass('loading');
+          }
+        });
+      }
+    //}
+  //}
+
+
+
+
+        /* ------------------ */
+        /* FITVIDS */
+        /* ------------------ */
+        $(".fitvids").fitVids();
+        $(".tpl .media-vimeo-video").fitVids();
+	$(".tpl .media-youtube-video").fitVids();
+
+
+	    /* ------------------ */
+        /* TWITTER TICKER */
+        /* ------------------ */
+        $('.last_tweet .flexslider').flexslider({
+                controlNav: false,
+                directionNav: false,
+                smoothHeight: true
+        });
+        /* lifts page */
+        $('.grooming-trails .last_tweet_mountain_ops .flexslider').flexslider({
+            slideshow: false
+        });
+
+
+
+        /* ------------------ */
+        /* AJAX LOADING */
+        /* ------------------ */
+        var ajaxContainer = $('.ajax-list-container');
+        if (ajaxContainer.length){
+            var ajaxPath = ajaxContainer.attr("data-ajax-path");
+            if(!ajaxContainer.hasClass("list-reload")){
+                $.ajax({
+                    type: 'GET',
+                    url: ajaxPath,
+                    data: { response_type: 'ajax' },
+                    success: function(result) {
+                        LIST.displayList(ajaxContainer, result);
+                    }
+                });
+            }
+        }
+
+
+        /* ---------------------- */
+        /* LOAD MORE ISOTOPE LIST */
+        /* ---------------------- */
+        $('.ajax-list-container').on('click', "a.btn-list-more", function(event) {
+            event.preventDefault();
+            var loadBtn = $(this);
+            var nextURL = loadBtn.attr("href");
+            loadBtn.addClass("loader");
+            $.ajax({
+                type: 'GET',
+                url: nextURL,
+                success: function(result) {
+                    LIST.appendList(result,ajaxContainer);
+                    loadBtn.removeClass("loader");
+                }
+            });
+        });
+
+
+
+
+        /* ------------------ */
+        /* SUPER TAB */
+        /* ------------------ */
+        $('#main-menu ul.menu').on('click', "a", function(event) {
+            event.preventDefault();
+            var that = $(this);
+            var section = that.attr("name");
+            var heightSubNav = MENU.subnav.height();
+
+            if( that.hasClass ("open") && MENU.isNavOpen ){
+                // Close Nav and remove Open to all nav items
+                MENU.hideSubContent();
+                MENU.clearOpenNav();
+                MENU.closeSub();
+                PARALLAX.moveTabBanner(0);
+            }else{
+
+                if (MENU.isNavOpen){
+                    // Change content on the nav, move Open to clicked item
+                    MENU.clearOpenNav();
+                    that.addClass("open");
+                    MENU.displaySubContent(section);
+                }else{
+                    // Open the nav and display content
+                    MENU.openSub();
+                    that.addClass("open");
+                    MENU.displaySubContent(section);
+                    PARALLAX.moveTabBanner(heightSubNav);
+                }
+            }
+
+        });
+
+
+        /* ------------------ */
+        /* WEATHER WIDGET */
+        /* ------------------ */
+        $('.weather-widget .toggles a').click( function(){
+                rel = $(this).attr('rel');
+                $(this).addClass('active').siblings().removeClass('active');
+                $('.weather-widget .location').hide();
+                $('#'+rel+'-full').fadeIn('fast');
+        });
+        $('.weather-widget .toggle').click( function(){
+                $(this).toggleClass('opened');
+                $('.widget-docked').toggleClass('opened');
+                $('.widget-full').toggleClass('opened');
+        });
+
+
+        /* ------------------ */
+        /* CLOSE ALERT BAR */
+        /* ------------------ */
+        $('#alertbar > .wrapper .close_alert').on('click', "a", function(event) {
+            event.preventDefault();
+            $.cookie('closeAlert', "true", { path: '/' });
+            $('#alertbar').slideUp("fast");
+        });
+
+
+	    /* ------------------ */
+        /* GROOMING REPORT */
+        /* ------------------ */
+        $('.grooming-trails .filter-horizontal a').click( function(){
+            rel = $(this).attr('rel');
+            $(this).addClass('active').parent().children('a').removeClass('active');
+            $('.grooming-trails .location').hide();
+            $('#'+rel+'-report').fadeIn('fast');
+        });
+
+        /* programtically move shuttle to Squaw */
+	$('.grooming-trails #squaw-report .shuttle-wrap').after('<div class="clearfix shuttle"><div class="header clearfix"><div class="cell">Name</div><div class="cell">&nbsp;</div><div class="cell">Hours</div><div class="cell">Status</div></div>');
+        $('.grooming-trails #squaw-report .lift:nth-child(40)').appendTo('#squaw-report .shuttle');
+        $('.grooming-trails #squaw-report .subheader:nth-child(38)').hide();
+	$('.grooming-trails #squaw-report .header:nth-child(39)').hide();
+
+        /* programtically move shuttle to Alpine */
+        $('.grooming-trails #alpine-report #alpine-lifts .subheader').hide();
+        $('.grooming-trails #alpine-report .shuttle-wrap').after('<div class="clearfix shuttle"><div class="header clearfix"><div class="cell">Name</div><div class="cell">&nbsp;</div><div class="cell">Hours</div><div class="cell">Status</div></div>');
+        $('.grooming-trails #alpine-report .lift:nth-child(20)').appendTo('#alpine-report .shuttle');
+	
+	$('#squaw-lifts .subheader').each(function(){
+	    $(this).nextUntil('.subheader').wrapAll('<div class="lift-wrapper">');
+	});
+	
+	$('#squaw-trails .subheader').each(function(){
+	    $(this).nextUntil('.subheader').wrapAll('<div class="trail-wrapper">');
+	});
+	
+	$('#alpine-trails .subheader').each(function(){
+	    $(this).nextUntil('.subheader').wrapAll('<div class="trail-wrapper">');
+	});
+
+
+
+        /* ---------------------- */
+        /* GETTING HERE */
+        /* ---------------------- */
+        $('#getting-here-map .filter-horizontal a').click( function(){
+            rel = $(this).attr('rel');
+            $(this).addClass('active').parent().children('a').removeClass('active');
+            $('.times .time, #getting-here-map .map').hide();
+            $('#'+rel+'-times').fadeIn('fast');
+            $('#getting-here-map .'+rel).fadeIn('fast');
+        });
+
+        $('#directions h5').click( function(){
+            $(this).parent().toggleClass('active').find('.block').slideToggle('fast');
+            $(this).parent().siblings().removeClass('active').find('.block').slideUp('fast');
+        });
+
+
+
+        /* ---------------------- */
+        /* HOURS OF OPERATIONS*/
+        /* ---------------------- */
+        $('.hours-of-operations-filters a').click( function(event){
+            event.preventDefault();
+            var ajaxContainer = $('.ajax-list-container');
+            var ajaxPath = $(this).attr('href');
+            ajaxContainer.addClass('loading').children().fadeOut();
+            $.ajax({
+                type: 'GET',
+                url: ajaxPath,
+                data: { response_type: 'ajax' },
+                success: function(result) {
+                    LIST.displayList(ajaxContainer, result);
+                }
+            });
+
+        });
+
+
+        /* ---------------------- */
+        /* PARALLAX ON INNER PAGE */
+        /* ---------------------- */
+        $(window).scroll(function() {
+            PARALLAX.scrollBanner();
+        });
+
+
+
+        /* ---------------------- */
+        /* LOAD HEADER IMAGE */
+        /* ---------------------- */
+        if( $("#banner-content").length ){
+            var bannerContent = $("#banner-content");
+            PARALLAX.loadImage(bannerContent);
+        }
+
+		
+
+	/* ---------------------- */
+        /* PERSONA PARALLAX */
+        /* ---------------------- */
+	PARALLAX.fullScreenScroll($('.persona-page .persona .row'));
+
+        /* ---------------------- */
+        /* FILTERS ON LIST */
+        /* ---------------------- */
+        $(".listing-filters select").each(function( index, element ) {
+
+            var select = $(this);
+            FILTERSTYLE.changeAnyToAll(select);
+            var filterType = select.parents(".listing-filters").attr("data-filter-type");
+
+            if (select.attr('name') == 'season' && $('body').hasClass('summer')) {
+                select.val("2");
+                LIST.filters['season'] = ".t2";
+            }else {
+                select.val("1");
+                LIST.filters['season'] = ".t1";
+            }
+
+            if (select.attr('name') == 'field_season_tid' && $('body').hasClass('summer')) {
+                select.val("2");
+                var request = LIST.buildReloadRequest();
+                window.History.pushState({state:select.val()}, document.title, '?'+request);
+            }
+
+            switch(filterType) {
+                case "filter-three-options": FILTERSTYLE.threeOptions(select); break;
+                case "filter-unique-option": FILTERSTYLE.uniqueOption(select); break;
+                default: FILTERSTYLE.defaultSelect(select);
+            }
+
+        });
+
+        // When select is changed on isotope list, change isotope result
+        $('.filters-hide').on( 'change', 'select', function(event) {
+            var $this = $(this);
+            var filterGroup = $this.attr("name");
+            // Get value of options elected
+            $this.find("option:selected").each(function() {
+                LIST.filters[ filterGroup ] = ( $( this ).attr("value") !== "" ) ? ".t"+$( this ).attr("value") : "";
+            });
+            // set filter for Isotope
+            LIST.filterIsotope();
+        });
+
+
+        // Behavior for select that has been replaced by new interface
+        $('.listing-filters').on( 'click', 'a', function(event) {
+            event.preventDefault();
+            var $this = $(this);
+            // get group key
+            var $buttonGroup = $this.parents('ul'); // get the current UL parent
+            var filterGroup = $buttonGroup.attr('data-name'); // get the name of UL
+            var relatedSelect = $(".listing-filters select[name='"+filterGroup+"']"); // Get the related Select based on UL name
+            var clickedValue = $(this).attr('href').replace("#", ""); // Get the value of the link on LI
+            relatedSelect.val(clickedValue).change(); // change value and trigger the change
+
+            // Remove previous active state and add new one
+            $buttonGroup.children().each(function( index, element ) {
+                $(this).children("a").removeClass("active");
+            });
+            $this.addClass("active");
+
+        });
+
+
+        // Bind to StateChange Event
+        var History = window.History;
+        if(typeof History.Adapter == 'object'){
+            History.Adapter.bind(window,'statechange',function(){ // Note: We are using statechange instead of popstate
+                var State = History.getState(); // Note: We are using History.getState() instead of event.state
+                LIST.updateFiltersReload(InitState);
+            });
+        }
+
+        var InitState = History.getState();
+        LIST.updateFiltersReload(InitState);
+        TABS.changejQueryTabs(InitState);
+
+
+        // When select is changed on classic list, reload the result
+        $('.filters-reload').on( 'change', 'select', function(event) {
+            var $this = $(this);
+            var request = LIST.buildReloadRequest();
+            History.pushState({state:$this.val()}, document.title, '?'+request);
+            return false;
+        });
+
+
+        // Reset button
+        $('.reset-filters').on( 'click', 'a', function(event) {
+            event.preventDefault();
+            History.pushState({}, document.title, '?');
+            return false;
+        });
+
+
+
+
+
+        /* ---------------------- */
+        /* UI TABS OPEN DEFAULT */
+        /* ---------------------- */
+        $('ul.ui-tabs-nav li').on( 'click', 'a', function(event) {
+            event.preventDefault();
+            var that = $(this);
+            var tabId = that.attr('id');
+            History.pushState({state:"tabs"}, document.title, '?tab='+tabId);
+        });
+
+
+
+
+
+
+        /* ---------------------- */
+        /* GALLERY */
+        /* ---------------------- */
+        $("#squawGallery").on( 'click', 'li.views-row a', function(event){
+            event.preventDefault();
+            var link = $(this);
+            GALLERY.show(link);
+        });
+        $("#squawOverlay").on( 'click', '.media-placeholder', function(event){
+            event.preventDefault();
+            GALLERY.hide();
+        });
+        $("#squawOverlay .galleryNav ul li").on( 'click', 'a', function(event){
+            event.preventDefault();
+            var navItem = $(this).attr("href").replace("#", "");
+            GALLERY.changeMedia(navItem);
+        });
+        $("#squawOverlay .closeOverlay").on( 'click', 'a', function(event){
+            event.preventDefault();
+            GALLERY.hide();
+        });
+        // Sharing Gallery
+        $("#squawOverlay .custom_sharing").on( 'click', 'a', function(event){
+            event.preventDefault();
+            var url = GALLERY.sharingContainer.attr("data-url");
+            var img = GALLERY.sharingContainer.attr("data-img");
+            var title = GALLERY.sharingContainer.attr("data-title");
+            var description = GALLERY.sharingContainer.attr("data-description");
+            var backURL = GALLERY.sharingContainer.attr("data-backurl");
+
+            switch ( $(this).parent().attr("class") ){
+                case "share_fb" : GALLERY.shareFB(url, img, title, description, backURL ); break;
+                case "share_tw" : GALLERY.shareTwit(url); break;
+                case "share_pi" : GALLERY.sharePin(url, img, title); break;
+            }
+
+
+        });
+        
+        
+        
+        /* ---------------------- */
+        /* OVERLAY ZONES */
+        /* ---------------------- */
+        $("#soulLanding").on( 'click', '.hero a', function(event){
+            event.preventDefault();
+            var link = $(this);
+            GALLERY.show(link);
+        });
+	
+	/* ---------------------- */
+        /* OVERLAY WORLD CUP */
+        /* ---------------------- */
+        $(".world-cup-header").on( 'click', '.ctaExplore a', function(event){
+            event.preventDefault();
+            var link = $(this);
+            GALLERY.show(link);
+        });
+	
+	/* ---------------------- */
+        /* OVERLAY NASTAR */
+        /* ---------------------- */
+        $(".nastar-header").on( 'click', '.ctaExplore a', function(event){
+            event.preventDefault();
+            var link = $(this);
+            GALLERY.show(link);
+        });
+	
+	/* ---------------------- */
+        /* OVERLAY GETTING HERE */
+        /* ---------------------- */
+        $(".page-node-16").on( 'click', '.ctaExplore a', function(event){
+            event.preventDefault();
+            var link = $(this);
+            GALLERY.show(link);
+        });
+	
+	/* ---------------------- */
+        /* OVERLAY FLYING HERE */
+        /* ---------------------- */
+        $(".page-node-6391").on( 'click', '.ctaExplore a', function(event){
+            event.preventDefault();
+            var link = $(this);
+            GALLERY.show(link);
+        });
+	
+	/* ---------------------- */
+        /* OVERLAY VIDEO GALLERY */
+        /* ---------------------- */
+        $("#video-gallery-wrapper").on( 'click', '.file-video a', function(event){
+            event.preventDefault();
+            var link = $(this);
+            GALLERY.show(link);
+        });
+	
+	/* ---------------------- */
+        /* OVERLAY TSP */
+        /* ---------------------- */
+        $(".node-tahoe-super-pass").on( 'click', '.ctaExplore a', function(event){
+            event.preventDefault();
+            var link = $(this);
+            GALLERY.show(link);
+        });
+	
+	/* ---------------------- */
+        /* OVERLAY Spring Skiing Capital ssc */
+        /* ---------------------- */
+        $(".page-node-7416").on( 'click', '.ctaExplore a', function(event){
+            event.preventDefault();
+            var link = $(this);
+            GALLERY.show(link);
+        });
+	
+	/* ---------------------- */
+        /* OVERLAY community */
+        /* ---------------------- */
+        $("#community-page").on( 'click', '.ctaExplore a', function(event){
+            event.preventDefault();
+            var link = $(this);
+            GALLERY.show(link);
+        });
+
+        /* ---------------------- */
+        /* renewable community */
+        /* ---------------------- */
+        $("#renewable").on( 'click', '.play', function(event){
+            event.preventDefault();
+            var link = $(this);
+            GALLERY.show(link);
+        });
+
+
+	/* ---------------------- */
+        /* TSP LAYERS ALLTHIS */
+        /* ---------------------- */
+
+	var marker4bis = false;
+        var counterDuration = 2500;
+        var counterEasing = "easeOutCubic";
+        // Section 4 Layer 1
+        $("#allthis").on("click", "#scene4Layer1 a.btnNext", function (event) {
+            event.preventDefault();
+            displaySection4b();
+        });
+        $("#allthis").on("click", "#scene4Layer2 a.btnNext", function (event) {
+            event.preventDefault();
+            displaySection4c();
+        });
+        $("#allthis").on("click", "#scene4Layer3 a.btnNext", function (event) {
+            event.preventDefault();
+            displaySection4a();
+        });
+	
+	function counterSection4a(){
+            // Lifts
+            $("#num-lifts .number span").counter({ countFrom: 10, countTo: 48, duration: counterDuration, easing: counterEasing});
+            // Bowl
+            $("#num-bowls .number span").counter({ countFrom: 10, countTo: 23, duration: counterDuration, easing: counterEasing});
+            // Acres
+            $("#num-acres .number span").counter({ countFrom: 1000, countTo: 6000, duration: counterDuration, easing: counterEasing,  numberFormatter: function(number) { return numberWithCommas( Math.floor( number ) ); } });
+            // Inches
+            $("#num-inches .number span").counter({ countFrom: 100, countTo: 450, duration: counterDuration, easing: counterEasing});
+            // Trails
+            $("#num-trails .number span").counter({ countFrom: 100, countTo: 270, duration: counterDuration, easing: counterEasing});      
+            marker4bis = true;
+        }
+        
+        
+        function displaySection4a(){
+            $("#scene4Layer1").show(0);
+            TweenMax.to("#scene4Layer3", 0.5, {opacity: 0});
+            TweenMax.to("#scene4Layer1", 1, {opacity: 1, onComplete: function(){
+                    $("#scene4Layer3").hide(0);
+                },
+                onStart: function(){
+                    if (!marker4bis){
+                        counterSection4a();  
+                    }
+                } 
+            });
+            
+        }
+
+        function displaySection4b(){ 
+            $("#scene4Layer2").show(0);
+            TweenMax.to("#scene4Layer1", 0.5, {opacity: 0});
+            TweenMax.to("#scene4Layer2", 1, {opacity: 1, onComplete: function(){
+                    $("#scene4Layer1").hide(0);
+                }
+            });
+        }
+        
+        function displaySection4c(){ 
+            $("#scene4Layer3").show(0);
+            TweenMax.to("#scene4Layer2", 0.5, {opacity: 0});
+            TweenMax.to("#scene4Layer3", 1, {opacity: 1, onComplete: function(){
+                    $("#scene4Layer2").hide(0);
+                },
+                onStart: function(){
+                    TweenMax.fromTo("#bus", 2, {left: "0"}, {left: "90%", ease: Circ.easeInOut});
+                } 
+            });
+        }
+
+		/* ------------------ */
+        /* TABS */
+        /* ------------------ */
+        $('.tabbed-content .tab').click( function(event){
+            event.preventDefault();
+            TABS.changeTab ( $(this) );
+        });
+	
+	$('.tabbed-content-2 .tab-2').click( function(event){
+            event.preventDefault();
+            TABS.changeTab ( $(this) );
+        });
+		
+		
+	$('.tabbed-content-3 .tab-3').click( function(event){
+            event.preventDefault();
+            TABS.changeTab ( $(this) );
+        });
+	
+		
+		
+		
+	/* ------------------ */
+        /* HIGHCAMP */
+        /* ------------------ */
+		
+		$('#highcamp #tabs').tabs();
+		$('#highcamp .ticket-link').click( function(){
+			$("html, body").animate({ scrollTop: $('#packages').offset().top });
+		});
+		
+	/* ------------------ */
+        /* PACT */
+        /* ------------------ */
+		
+		$('#pact-page #tabs').tabs();
+		    
+		$('#quote-slider').flexslider({
+		  animation: "fade",
+		  slideshow: true,
+		  slideshowSpeed: 10000,
+		  start: function(slider){
+		    // Wrap the pager
+		    $('.flexslider ol.flex-control-nav')
+		    .wrap( "<div class='flex-control-wrapper'></div>" );
+		  }
+		});
+		
+	/* ------------------ */
+        /* CA Express */
+        /* ------------------ */
+	$('#ca-express .carrousel2').flexslider({
+	    animation: "slide",
+	    animationLoop: false,
+	    itemWidth: 250,
+	    minItems: 2,
+	    maxItems: 4,
+	    controlNav: false,
+	    start: function(slider){
+	      // Wrap the pager
+	      $('.flexslider ol.flex-control-nav')
+	      .wrap( "<div class='flex-control-wrapper'></div>" );
+	    }
+	  });
+	
+	/* ------------------ */
+        /* COMMUNITY  */
+        /* ------------------ */
+		
+		$('#community-page #tabs').tabs();
+		
+
+	/* ------------------ */
+        /* UPDATE PREFERNCES FORM */
+        /* ------------------ */
+	$( "#update-preferences .date-picker input" ).datepicker();
+
+
+        /* ------------------ */
+        /* BOOKING WIDGET */
+        /* ------------------ */
+        // Setup Datepicker
+        $( "#booking-widget .dateFrom").datepicker({
+            showAnim: "fadeIn",
+            defaultDate: "",
+            changeMonth: true,
+            numberOfMonths: 2,
+            onClose: function( selectedDate ) {
+                $( "#booking-widget .dateTo").datepicker( "option", "minDate", selectedDate );
+            }
+	}).datepicker("setDate", new Date());
+
+        $( "#booking-widget .dateTo").datepicker({
+            showAnim: "fadeIn",
+            defaultDate: "+1w",
+            changeMonth: true,
+            numberOfMonths: 2,
+            onClose: function( selectedDate ) {
+                $( "#booking-widget .dateFrom").datepicker( "option", "maxDate", selectedDate );
+            }
+        }).datepicker("setDate", "+1w");
+
+        // Setup number spinners
+        $( "#booking-widget .spinner" ).spinner({ min:0, max: 10 });
+
+        // Setup lift tickets selects
+        $('#lift-tickets select[name="ProductCategoryCode"]').val('').on('change', function() {
+            $('#lift-tickets input[name="ProductCode"], .product-code select').val('');
+            $('.product-code .customSelectInner').html('-- Select --');
+            $("#lift-tickets form .error").remove();
+            $('.form-item.product-code').hide();
+            $('#type-'+$(this).val()).fadeIn();
+
+        });
+
+        $('.product-code select').val('').on('change', function() {
+            $('#lift-tickets input[name="ProductCode"]').val($(this).val());
+            $("#lift-tickets form .error").remove();
+        });
+
+        // validate tickets form
+        $("#lift-tickets form").submit(function( event ) {
+            var form = $("#lift-tickets form");
+            //if(!$('#lift-tickets input[name="ProductCode"]').val() || !$('#lift-tickets select[name="ProductCategoryCode"]').val()){
+			if(!$('#lift-tickets select[name="ProductCategoryCode"]').val()){
+                form.find('.error').remove();
+                form.append('<div class="error">Please select your pass type</div>');
+                event.preventDefault();
+            }
+        });
+
+        // handle ski school form select change
+        $('#ski-school select, #rentals select').change(function(e) {
+            var select = $(this);
+            var name = select.attr('name');
+            var val = select.val();
+            var cur_item = select.parent();
+            var items = false;
+
+            if (select.parents('#ski-school').length > 0) {
+                items = $('#ski-school .form-item:not(".form-submit")');
+            }else {
+                items = $('#rentals .form-item:not(".form-submit")');
+            }
+
+            //hide all following form fields if val is empty
+            if (val == '') {
+                var found = false;
+
+                items.each(function() {
+                    if (found) {
+                        $(this).hide('fast');
+                        $(this).find('select').val('');
+                    }
+
+                    if (!found && $(this).is(cur_item)) {
+                        found = true;
+                    }
+                });
+            }else { //show the next form item
+                var show = false;
+
+                items.each(function() {
+                    if (show) {
+                        $(this).show('fast');
+                        show = false;
+                    }
+
+                    if (!show && $(this).is(cur_item)) {
+                        show = true;
+                    }
+                });
+		
+		/* Gray out snowboard for 3-4 */
+                if (name == 'lessonAge' && val == '3to4') {
+                    var disciplineSelect = $('#ski-school select[name="lessonDiscipline"]');
+		   
+                    disciplineSelect.children("[value='snowboard']").attr('disabled', 'disabled');
+                    disciplineSelect.val('');
+                    disciplineSelect.change();
+                }else if (name == 'lessonAge') {
+                    $('#ski-school select[name="lessonDiscipline"]').children().removeAttr('disabled');
+                }
+		
+		/* Gray out clinics for non-Adults */
+		if (name == 'lessonAge' && val == '3to4') {
+		    var typeSelect = $('#ski-school select[name="lessonType"]');
+		    
+		    typeSelect.children("[value='clinic']").attr('disabled', 'disabled');
+                    typeSelect.val('');
+                    typeSelect.change();
+                }else if (name == 'lessonAge') {
+                    $('#ski-school select[name="lessonType"]').children().removeAttr('disabled');
+                }
+
+		
+		/* Gray out ride clinics for kids */
+		if ((name == 'lessonDiscipline' && val == 'snowboard') || (name == 'lessonAge' && val == '8to13') || (name == 'lessonAge' && val == '5to7')) {
+		    var locationSelect = $('#ski-school select[name="lessonType"]');
+		    
+		    locationSelect.children("[value='clinic']").attr('disabled', 'disabled');
+                    locationSelect.val('');
+                    locationSelect.change();
+                }else if (name == 'lessonDiscipline') {
+                    $('#ski-school select[name="lessonType"]').children().removeAttr('disabled');
+                }else if (name == 'lessonAge') {
+                    $('#ski-school select[name="lessonType"]').children().removeAttr('disabled');
+                }
+		
+		
+            }
+        });
+
+        var first = true;
+        $('#ski-school .form-item:not(".form-submit")').each(function(e) {
+            var select = $(this);
+
+            select.val('');
+
+            if (first) {
+                first = false;
+            }else {
+                select.hide();
+            }
+        });
+
+        var first = true;
+        $('#rentals .form-item:not(".form-submit")').each(function(e) {
+            var select = $(this);
+
+            select.val('');
+
+            if (first) {
+                first = false;
+            }else {
+                select.hide();
+            }
+        });
+
+        // handle ski school form submit
+        $("#ski-school form").submit(function( event ) {
+            var lesson_map = {
+                //squaw adult group lessons - GOOD for 2018
+                //'squaw-group-adult-ski-lift' : {'group' : '90', 'category' : '294'},
+		//'squaw-group-adult-ski-liftrental' : {'group' : '90', 'category' : '111'},
+		'squaw-group-adult-ski' : {'group' : '90', 'category' : '109'},
+                //'squaw-group-adult-snowboard-lift' : {'group' : '90', 'category' : '308'},
+		//'squaw-group-adult-snowboard-liftrental' : {'group' : '90', 'category' : '112'},
+		'squaw-group-adult-snowboard' : {'group' : '90', 'category' : '275'},
+                
+		//squaw child group lessons - GOOD for 2018
+                'squaw-group-3to4-ski' : {'group' : '95', 'category' : '102'},
+                'squaw-group-5to7-ski' : {'group' : '95', 'category' : '103'},
+                'squaw-group-5to7-snowboard' : {'group' : '95', 'category' : '105'},
+                'squaw-group-8to13-ski' : {'group' : '95', 'category' : '104'},
+                'squaw-group-8to13-snowboard' : {'group' : '95', 'category' : '106'},
+                
+		//squaw adult private lessons - GOOD for 2018
+                'squaw-private-adult-ski' : {'group' : '10001', 'category' : '591'},
+                'squaw-private-adult-snowboard' : {'group' : '10001', 'category' : '593'},
+                
+		//squaw child private lessons - GOOD for 2018
+                'squaw-private-3to4-ski' : {'group' : '10001', 'category' : '594'},
+                'squaw-private-3to4-snowboard' : {'group' : '10001', 'category' : '596'},
+                'squaw-private-5to7-ski' : {'group' : '10001', 'category' : '594'},
+                'squaw-private-5to7-snowboard' : {'group' : '10001', 'category' : '596'},
+                'squaw-private-8to13-ski' : {'group' : '10001', 'category' : '594'},
+                'squaw-private-8to13-snowboard' : {'group' : '10001', 'category' : '596'},
+		
+		//squaw adult clinics - GOOD for 2018
+                'squaw-clinic-adult-ski' : {'group' : '100001', 'category' : '599'},
+		'squaw-clinic-adult-snowboard' : {'group' : '100001', 'category' : '599'},
+		
+		//squaw child clinics - GOOD for 2018
+                'squaw-clinic-5to7-ski' : {'group' : '95', 'category' : '87'},
+		'squaw-clinic-8to13-ski' : {'group' : '95', 'category' : '87'},
+
+                //alpine adult group lessons - GOOD for 2018
+                //'alpine-group-adult-ski-lift' : {'group' : '4', 'category' : '298'},
+		//'alpine-group-adult-ski-liftrental' : {'group' : '4', 'category' : '284'},
+		//'alpine-group-adult-ski-lessononly' : {'group' : '4', 'category' : '282'},
+		'alpine-group-adult-ski' : {'group' : '4', 'category' : '282'},
+                //'alpine-group-adult-snowboard-lift' : {'group' : '4', 'category' : '299'},
+		//'alpine-group-adult-snowboard-liftrental' : {'group' : '4', 'category' : '285'},
+		//'alpine-group-adult-snowboard-lessononly' : {'group' : '4', 'category' : '283'},
+		'alpine-group-adult-snowboard' : {'group' : '4', 'category' : '283'},
+                
+		//alpine child group lessons - GOOD for 2018
+                'alpine-group-3to4-ski' : {'group' : '97', 'category' : '260'},
+                'alpine-group-5to7-ski' : {'group' : '97', 'category' : '263'},
+                'alpine-group-5to7-snowboard' : {'group' : '97', 'category' : '269'},
+                'alpine-group-8to13-ski' : {'group' : '97', 'category' : '267'},
+                'alpine-group-8to13-snowboard' : {'group' : '97', 'category' : '270'},
+                
+		//alpine adult private lessons - GOOD for 2018
+                'alpine-private-adult-ski' : {'group' : '24', 'category' : '592'},
+                'alpine-private-adult-snowboard' : {'group' : '24', 'category' : '595'},
+                
+		//alpine child private lessons - GOOD for 2018
+                'alpine-private-3to4-ski' : {'group' : '24', 'category' : '597'},
+                'alpine-private-3to4-snowboard' : {'group' : '24', 'category' : '598'},
+                'alpine-private-5to7-ski' : {'group' : '24', 'category' : '597'},
+                'alpine-private-5to7-snowboard' : {'group' : '24', 'category' : '598'},
+                'alpine-private-8to13-ski' : {'group' : '24', 'category' : '597'},
+                'alpine-private-8to13-snowboard' : {'group' : '24', 'category' : '598'},
+		
+		//alpine adult clinics - GOOD for 2018
+                'alpine-clinic-adult-ski' : {'group' : '100001', 'category' : '601'},
+		'alpine-clinic-adult-snowboard' : {'group' : '100001', 'category' : '601'},
+		
+		//alpine child clinics - GOOD for 2018
+                'alpine-clinic-5to7-ski' : {'group' : '97', 'category' : '149'},
+		'alpine-clinic-8to13-ski' : {'group' : '97', 'category' : '149'}
+            };
+
+            var form = $(this);
+            var age = $('#ski-school select[name="lessonAge"]').val();
+            var type = $('#ski-school select[name="lessonType"]').val();
+            var location = $('#ski-school select[name="lessonLocation"]').val();
+            var discipline = $('#ski-school select[name="lessonDiscipline"]').val();
+
+            if(!age){
+                form.find('.error').remove();
+                form.append('<div class="error">Please select an age group.</div>');
+                event.preventDefault();
+            }else if(!type){
+                form.find('.error').remove();
+                form.append('<div class="error">Please select the type of lesson.</div>');
+                event.preventDefault();
+            }else if(!location){
+                form.find('.error').remove();
+                form.append('<div class="error">Please select a location.</div>');
+                event.preventDefault();
+            }else if(!discipline){
+                form.find('.error').remove();
+                form.append('<div class="error">Please select the desired discipline</div>');
+                event.preventDefault();
+            }else {
+                var lesson = lesson_map[location+'-'+type+'-'+age+'-'+discipline];
+
+                if (lesson) {
+                    $('#ski-school input[name="ProductGroupCode"]').val(lesson.group);
+                    $('#ski-school input[name="ProductCategoryCode"]').val(lesson.category);
+                }
+            }
+
+        });
+
+        // rentals form submit
+        $("#rentals form").submit(function( event ) {
+            var rentals_map = {
+                'squaw-ski-only' : '177',
+                'squaw-ski-package' : '148',
+                'squaw-snowboard-only' : '178',
+                'squaw-snowboard-package' : '482',
+                'alpine-ski-only' : '309',
+                'alpine-ski-package' : '307',
+                'alpine-snowboard-only' : '311',
+                'alpine-snowboard-package' : '483'
+            };
+
+            var form = $(this);
+            //var age = $('#rentals select[name="rentalAge"]').val();
+            var type = $('#rentals select[name="rentalPackage"]').val();
+            var location = $('#rentals select[name="rentalLocation"]').val();
+
+            if(!type){
+                form.find('.error').remove();
+                form.append('<div class="error">Please select a package type.</div>');
+                event.preventDefault();
+            }else if(!location){
+                form.find('.error').remove();
+                form.append('<div class="error">Please select a location.</div>');
+                event.preventDefault();
+            }else {
+                var code = rentals_map[location+'-'+type];
+
+                if (code) {
+                    $('#rentals input[name="ProductCategoryCode"]').val(code);
+                }
+            }
+        });
+	
+	$("#season-passes form").submit(function( event ) {
+            
+            var form = $(this);
+            var code = $('#season-passes select[name="ProductCategoryCode"]').val();
+
+            if(!code){
+                form.find('.error').remove();
+                form.append('<div class="error">Please select an option.</div> <strong><a href="https://store.squawalpine.com/eStore">Learn more about all season pass types</a></strong>');
+                event.preventDefault();
+            }
+        });
+
+        // handle ski school form submit
+        
+        $("#lift-tickets form").submit(function( event ) {
+            var ticket_map = {
+                '259'  : '3',
+                '265'  : '3',
+		'478'  : '18',
+                '443' : '18'
+            };
+
+            var form = $(this);
+            var code = $('#lift-tickets select[name="ProductCategoryCode"]').val();
+
+            if(!code){
+                form.find('.error').remove();
+                form.append('<div class="error">Please select an option.</div>');
+                event.preventDefault();
+            }else {
+                $('#lift-tickets input[name="ProductGroupCode"]').val(ticket_map[code]);
+            }
+        });
+
+	// Setup tram tickets selects
+        $('#tram-tickets select[name="ProductCategoryCode"]').on('change', function() {
+            $("#tram-tickets form .error").remove();
+        });
+
+        // validate tickets form
+        $("#tram-tickets form").submit(function( event ) {
+            var form = $("#tram-tickets form");
+            if(!$('#tram-tickets select[name="ProductCategoryCode"]').val()){
+                    form.find('.error').remove();
+                    form.append('<div class="error">Please select a ticket or package</div>')
+                    event.preventDefault();
+            }
+        });
+	
+	// Lift ticket calculator
+	$( "#lift-ticket-calculator .dateFrom").datepicker({
+            showAnim: "fadeIn",
+            defaultDate: "",
+            changeMonth: true,
+            numberOfMonths: 2,
+	    altField: "#altDate",
+	    altFormat: "yymmdd",
+	}).datepicker("setDate");
+	
+	// Setup number spinners
+        $( "#lift-ticket-calculator .spinner" ).spinner({ min:1, max: 7 });
+
+	
+	 $("#lift-ticket-calculator").on( 'click', '.calculate', function(event){
+            
+            var altDate = $('#lift-ticket-calculator input[name="dateAlt"]').val();
+	    var days = $('#lift-ticket-calculator select[name="days"]').val();
+	    var age = $('#lift-ticket-calculator select[name="liftTicketAge"]').val();
+	    var resultItem = $('.resultItem');
+	    var resultSavings = $('.resultSavings');
+	    var resultRate = $('.resultRate');
+	    var resultBuy = $('.resultBuy');
+
+	    resultItem.empty();
+	    
+	    if((days) == 1) {
+		resultItem.append('one-day lift ticket');
+	    }
+	    
+	    if((days) == 2) {
+		resultItem.append('one-day lift ticket, Tahoe Super 4, 2-Day Lift Ticket');
+	    }
+	    
+	    if((days) == 3) {
+		resultItem.append('Tahoe Super 4, 3-Day Lift Ticket');
+	    }
+	    
+	    if((days) == 4) {
+		resultItem.append('Tahoe Super 4, 3-Day Lift Ticket');
+	    }
+	    
+            if(((days) == 5) && ((altDate) <= 20161216))  {
+		resultItem.append('Bronze Tahoe Super Pass');
+	    }else if  (((days) == 5) && ((altDate) >= 20161217) && ((altDate) <= 20161231)) {
+		resultItem.append('Gold Tahoe Super Pass, Silver Tahoe Super Pass');
+	    }else if  (((days) == 5) && ((altDate) >= 20170101) && ((altDate) <= 20170113)) {
+		resultItem.append('Gold Tahoe Super Pass, Silver Tahoe Super Pass');
+	    }else if  (((days) == 5) && ((altDate) >= 20170114) && ((altDate) <= 20170115)) {
+		resultItem.append('Gold Tahoe Super Pass');
+	    }else if  (((days) == 5) && ((altDate) >= 20170116) && ((altDate) <= 20170120)) {
+		resultItem.append('Gold Tahoe Super Pass, Silver Tahoe Super Pass');
+	    }else if  (((days) == 5) && ((altDate) >= 20170121) && ((altDate) <= 20170217)) {
+		resultItem.append('Gold Tahoe Super Pass, Silver Tahoe Super Pass, Bronze Tahoe Super Pass');
+	    }else if  (((days) == 5) && ((altDate) >= 20170218) && ((altDate) <= 20170225)) {
+		resultItem.append('Gold Tahoe Super Pass, Silver Tahoe Super Pass, Bronze Tahoe Super Pass');
+	    }else if  (((days) == 5) && ((altDate) >= 20170226) && ((altDate) <= 20170430)) {
+		resultItem.append('Gold Tahoe Super Pass, Silver Tahoe Super Pass, Bronze Tahoe Super Pass');
+	    }
+	    
+	    if(((days) == 6) && ((altDate) <= 20161216))  {
+		resultItem.append('Bronze Tahoe Super Pass');
+	    }else if  (((days) == 6) && ((altDate) >= 20161217) && ((altDate) <= 20161231)) {
+		resultItem.append('Gold Tahoe Super Pass, Silver Tahoe Super Pass');
+	    }else if  (((days) == 6) && ((altDate) >= 20170101) && ((altDate) <= 20170113)) {
+		resultItem.append('Gold Tahoe Super Pass, Silver Tahoe Super Pass');
+	    }else if  (((days) == 6) && ((altDate) >= 20170114) && ((altDate) <= 20170115)) {
+		resultItem.append('Gold Tahoe Super Pass');
+	    }else if  (((days) == 6) && ((altDate) >= 20170116) && ((altDate) <= 20170120)) {
+		resultItem.append('Gold Tahoe Super Pass, Silver Tahoe Super Pass');
+	    }else if  (((days) == 6) && ((altDate) >= 20170121) && ((altDate) <= 20170217)) {
+		resultItem.append('Gold Tahoe Super Pass, Silver Tahoe Super Pass, Bronze Tahoe Super Pass');
+	    }else if  (((days) == 6) && ((altDate) >= 20170218) && ((altDate) <= 20170225)) {
+		resultItem.append('Gold Tahoe Super Pass, Silver Tahoe Super Pass, Bronze Tahoe Super Pass');
+	    }else if  (((days) == 6) && ((altDate) >= 20170226) && ((altDate) <= 20170430)) {
+		resultItem.append('Gold Tahoe Super Pass, Silver Tahoe Super Pass, Bronze Tahoe Super Pass');
+	    }
+	    
+	    if(((days) == 7) && ((altDate) <= 20161216))  {
+		resultItem.append('Bronze Tahoe Super Pass');
+	    }else if  (((days) == 7) && ((altDate) >= 20161217) && ((altDate) <= 20161231)) {
+		resultItem.append('Gold Tahoe Super Pass, Silver Tahoe Super Pass');
+	    }else if  (((days) == 7) && ((altDate) >= 20170101) && ((altDate) <= 20170113)) {
+		resultItem.append('Gold Tahoe Super Pass, Silver Tahoe Super Pass');
+	    }else if  (((days) == 7) && ((altDate) >= 20170114) && ((altDate) <= 20170115)) {
+		resultItem.append('Gold Tahoe Super Pass');
+	    }else if  (((days) == 7) && ((altDate) >= 20170116) && ((altDate) <= 20170120)) {
+		resultItem.append('Gold Tahoe Super Pass, Silver Tahoe Super Pass');
+	    }else if  (((days) == 7) && ((altDate) >= 20170121) && ((altDate) <= 20170217)) {
+		resultItem.append('Gold Tahoe Super Pass, Silver Tahoe Super Pass, Bronze Tahoe Super Pass');
+	    }else if  (((days) == 7) && ((altDate) >= 20170218) && ((altDate) <= 20170225)) {
+		resultItem.append('Gold Tahoe Super Pass, Silver Tahoe Super Pass, Bronze Tahoe Super Pass');
+	    }else if  (((days) == 7) && ((altDate) >= 20170226) && ((altDate) <= 20170430)) {
+		resultItem.append('Gold Tahoe Super Pass, Silver Tahoe Super Pass, Bronze Tahoe Super Pass');
+	    }
+	    
+	    //result.append(altDate);
+        });
+
+
+
+        /* ------------------ */
+        /* SEASON SWITCHER */
+        /* ------------------ */
+        $('.season-switcher').on( 'change', 'select', function(event) {
+            var seasonPath = $(this).val();
+            window.location.href = seasonPath;
+        });
+
+
+        /* ------------------ */
+        /* SEARCH */
+        /* ------------------ */
+        $(".search-opener").on( 'click', 'a', function(event){
+            event.preventDefault();
+            var maGlass = $(this);
+            if( maGlass.hasClass("active") ){
+                SEARCH.closeBar();
+                maGlass.removeClass("active");
+            }else{
+                SEARCH.openBar();
+                maGlass.addClass("active");
+		//$('input.gsc-input').focus();
+		//$( "#old" ).click(function() {
+		    //$( "input" ).trigger( "focus" );
+		//});
+		$( 'input.form-text' ).trigger( "focus" );
+		//$('input.gsc-input').triggerHandler("focus");
+		/*setTimeout(function() {
+		    ('input.gsc-input').focus();
+		    }, 0);*/
+		
+		/*$('input.gsc-input').focusout(function() {
+		    setTimeout(function() {
+			$(this).focus();
+		    }, 0);
+		});	*/
+            }
+
+        });
+	
+	
+
+
+        /* ------------------ */
+        /* MOBILE NAV */
+        /* ------------------ */
+
+        // Opening the main nav
+        $("#mobile-nav-btn").on( 'click', 'a', function(event){
+            event.preventDefault();
+            if( $(this).hasClass("open") ){
+                $("#mobile-nav-full").slideUp(500, "easeOutExpo", function(){
+                    $(this).removeClass("onMobile").removeAttr("style");
+                });
+                $(this).removeClass("open");
+            }else{
+                $("#mobile-nav-full").slideDown(500, "easeOutExpo", function(){
+                    $(this).addClass("onMobile").removeAttr("style");
+                });
+                $(this).addClass("open");
+            }
+        });
+
+        // Opening the sub-nav
+        $("#mobile-nav-full").on( 'click', '.menu-block-wrapper > ul.menu > li > a', function(event){
+            event.preventDefault();
+
+            // Get the UL menu related to the clicked item
+            var childUL = $(this).next("ul.menu");
+
+            // If already open, close the clicked nav
+            if( $(this).hasClass("open") ){
+
+                childUL.slideUp(500, "easeOutExpo");
+                $(this).removeClass("open");
+
+            // else, close all the other one and open the clicked one
+            }else{
+
+                // Close all other menus
+                var parentLI = $(this).parent("li");
+                parentLI.siblings().each(function( index ) {
+                    var otherLi = $( this );
+                    otherLi.children("a.menu__link").removeClass("open");
+                    otherLi.children("ul.menu").slideUp(500, "easeOutExpo");
+                });
+                // Open clicked nav
+                childUL.slideDown(500, "easeOutExpo");
+                $(this).addClass("open");
+
+            }
+        });
+
+
+
+        /* ----------------------------------- */
+        /* DISABLE CLICK EVENT ON HEADLINE NAV */
+        /* ----------------------------------- */
+        $(".menu-block-wrapper").on( 'click', 'a[name="headline"]', function(event){
+            event.preventDefault();
+        });
+
+
+
+         /* ----------------------------------- */
+        /* MOBILE FOR FOOTER  */
+        /* ----------------------------------- */
+        $("#bottom .footer-left .menu-block-wrapper").on( 'click', 'a[name="headline"]', function(event){
+            event.preventDefault();
+
+            if(DEVICE.isMobile){
+                var clickedItem = $(this);
+                if(clickedItem.hasClass("open")){
+                    FOOTER.closeMenu (clickedItem);
+                }else{
+                    FOOTER.openMenu (clickedItem);
+                }
+            };
+        });
+
+
+        /* ------------------ */
+        /* CUSTOM SELECT */
+        /* ------------------ */
+        $('select').css('width','auto').customSelect();
+
+
+
+
+    });
+
+
+
+
+    var DEVICE = {};
+    DEVICE.isMobile = false;
+    DEVICE.timerResize = function(){
+        // Define if mobile and adjust height of elements
+        this.checkMobile();
+        // Booking widget - hide tabs on mobile
+        if( $("#booking-widget").length ){
+            TABS.initTab();
+        }
+        // Footer accordion on mobile
+        if(DEVICE.isMobile){
+            FOOTER.removeAllStyle();
+        }
+    };
+    DEVICE.checkMobile = function (){
+        // Define if on mobile (based on CCS media Queries : Device < 800px wide)
+        if ( $("#mobile-nav-btn").css("display") === 'block') {
+            DEVICE.isMobile = true;
+        }else{
+            DEVICE.isMobile = false;
+        }
+    };
+
+
+
+
+
+    /* ---------------------- */
+    /* HOMEPAGE FUNCTIONS  */
+    /* ---------------------- */
+    var HOME = {};
+    HOME.slider = $("#hero .wrapper .block-views");
+    HOME.reposTextSlider = function($nbSlide){
+        var sliderUL = $("#hero .wrapper .block-views ul.slides");
+        for (var $i=0; $i<$nbSlide; $i++){
+            var liToChange = sliderUL.children().eq($i)
+            if( liToChange !== undefined ){
+                var ctaToChange = liToChange.find(".home-slide-content > .field-cta > .wrapper");
+                var verticalClass = ctaToChange.attr("class").match(/bottom[\w-]*\b/); // DO CHECKING HERE
+                var verticalPercent = 57;
+                if (verticalClass[0] !== null){
+                    verticalPercent = parseInt(verticalClass[0].replace("vertical-",'')) * 0.60;
+                }
+                ctaToChange.css({"bottom": verticalPercent+"%"});
+            }
+
+
+        }
+
+
+    };
+
+
+
+
+    /* ---------------------- */
+    /* FOOTER ON MOBILE  */
+    /* ---------------------- */
+    var FOOTER = {};
+    FOOTER.openMenu = function($item){
+        FOOTER.closeMenu();
+        var relativeUL = $item.next("ul.menu");
+        relativeUL.slideDown(250, function(){
+            $item.addClass("open");
+        });
+    };
+
+    FOOTER.closeMenu = function(){
+        $("#bottom .footer-left .menu-block-wrapper ul.menu > li.menu__item").each(function( index ) {
+            var relativeUL = $(this).find("ul.menu");
+            var relativeLink = $(this).find('a[name="headline"]');
+            relativeUL.slideUp(250, function(){
+                relativeLink.removeClass("open");
+            });
+        });
+
+
+    };
+
+    FOOTER.removeAllStyle = function (){
+        $("#bottom .footer-left .menu-block-wrapper ul.menu > li.menu__item").each(function( index ) {
+            var relativeUL = $(this).find("ul.menu");
+            var relativeLink = $(this).find('a[name="headline"]');
+            relativeUL.removeAttr("style");
+            relativeLink.removeClass("open");
+        });
+    };
+
+
+    var SEARCH = {};
+    SEARCH.bar = $("#searchbar");
+    SEARCH.openBar = function(){
+        SEARCH.bar.slideDown("fast");
+    };
+    SEARCH.closeBar = function(){
+        SEARCH.bar.slideUp("fast");
+    };
+
+
+
+
+
+    /* ---------------------- */
+    /* LIST VIEW AND ISOTOPE / MASONRY  */
+    /* ---------------------- */
+    var LIST = {};
+    LIST.isoContainer;
+    LIST.pager = false;
+    LIST.filters = {};
+    LIST.filterAge = '';
+    LIST.displayList = function($container, $list){
+        // Fill the container with the list
+        $container.html($list);
+        // Store ul container
+        LIST.isoContainer = $container.find( "ul.item-list" );
+
+        // make list items not visible
+        LIST.isoContainer.children().each(function( index, element ) {
+            $(this).css({opacity: 0});
+        });
+        // check if there is a pager and if so, change it for a load more
+       if ($container.find("ul.pager").length ){
+            var ulPager = $container.find("ul.pager");
+            var nextURL = ulPager.find("li.pager-next a").attr("href");
+            LIST.pager = ulPager.parent();
+            LIST.changePager(nextURL);
+        }
+        // Show Container
+        $container.slideDown(250, function(){
+            // Remove Loader
+            $container.removeClass("loading");
+            // Make list items visible
+            LIST.isoContainer.children().each(function( index, element ) {
+                var el = $(this);
+
+
+                el.delay( index * 100 ).animate({
+                    opacity: 1
+                }, 250, function() {
+                    if($container.hasClass("isotope-list")){
+                        LIST.applyIsotope();
+                        LIST.filterIsotope();
+                    }
+                });
+            });
+            // Check if there is an hashtag
+            var hash = window.location.hash;
+            if ( hash !== "" ){
+                var id = hash.replace("#/", "");
+                var divToGo = $("."+id);
+                if( divToGo.length ){
+                    $("html, body").animate({ scrollTop: divToGo.offset().top },'fast');
+                }
+            }
+
+
+        });
+    };
+
+    LIST.appendList = function(newlist, $container){
+        var newPageUrl = $(newlist).find('ul.pager li.pager-next a').attr("href");
+        $(newlist).find('ul.item-list li').each(function( index ) {
+            var newLi = $("<li>").addClass( $(this).attr("class")).html($(this).html());
+            LIST.isoContainer.append(newLi);
+            if ($container.hasClass("isotope-list")){
+                LIST.isoContainer.isotope( 'appended', newLi );
+            }
+        });
+        LIST.changePager(newPageUrl);
+
+        if ($container.hasClass("isotope-list")){
+            var relayoutIsotope = setTimeout(function() { LIST.isoContainer.isotope( 'reloadItems' ).isotope( 'layout' ); }, 750);
+        }
+    };
+
+
+
+    LIST.changePager = function(nextURL){
+        LIST.pager.addClass("loadingPager").empty();
+        if(nextURL !== undefined){
+            LIST.pager.append('<a href="'+nextURL+'" class="btn-plain btn-list-more">Load More</a>');
+        }
+    };
+    
+    
+    LIST.applyIsotope = function (){
+        LIST.isoContainer.isotope({masonry: {
+                columnWidth: '.views-row'
+            },
+            resizesContainer: true,
+            itemSelector: '.views-row',
+            hiddenStyle: {
+                opacity: 0
+            },
+            visibleStyle: {
+                opacity: 1
+            }	
+    });
+	 };
+
+    LIST.filterIsotope = function (){
+
+        // Define Classic filters
+        var filterValue = '';
+        for ( var prop in LIST.filters ) {
+            filterValue += LIST.filters[ prop ];
+        }
+
+        // Define Age filters
+        var filterAge = LIST.filterAge;
+
+        // Add Filter to Isotope
+        LIST.isoContainer.isotope({
+            filter: function() {
+                var item = $(this).find('.teaser');
+                // change filter format
+                var terms = filterValue.split(".").splice(1,10);
+                for ( var tid in terms ) {
+                    if ( !item.hasClass(terms[tid]) ){
+                        return false;
+                    }
+                }
+                // Specific check if age is not empty (for lessons and teams filters)
+                if(filterAge !== ""){
+
+                    var itemMinAge = item.attr("data-min-age");
+                    var itemMaxAge = item.attr("data-max-age");
+
+                    switch(filterAge) {
+                        // All or Nothing, return true
+                        case "ALL": return true; break;
+                        // 18+ Case return if false if max value is not Adult
+                        case "18+": if (itemMaxAge !== "18"){ return false; } break;
+                        // Real Number Case
+                        default:
+                            var intFilterAge = parseInt(filterAge);
+                            var intMinAge = parseInt(itemMinAge);
+                            var intMaxAge = parseInt(itemMaxAge);
+                            if( isNaN(intMinAge) || isNaN(intMaxAge) ){ return false; }
+                            if( intFilterAge < intMinAge || intFilterAge > intMaxAge ){ return false; }
+                    }
+
+                }
+                return true;
+            }
+        });
+
+    };
+
+    LIST.getSelectedReloadFilters = function(){
+        var result = [];
+        $(".filters-reload .views-exposed-widgets .views-exposed-widget").each(function( index ) {
+            var select = $(this).find("select");
+            if (select.attr("name") !== undefined){
+                result[select.attr("name")] = select.val();
+            }
+        });
+        return result;
+    };
+
+    LIST.updateFiltersReload = function ($state){
+        var arrParam = [];
+
+        $(".filters-reload .views-exposed-widgets .views-exposed-widget").each(function( index ) {
+            var select = $(this).find("select");
+
+            if (select.attr("name") !== undefined){
+                var paramValue = LIST.getParameterByName(select.attr("name"), $state.hash);
+                select.val(paramValue);
+                select.find("option[value=" + paramValue + "]").prop( "selected", true );
+                select.trigger('render');
+                arrParam[select.attr("name")] = paramValue;
+            }
+
+        });
+
+        LIST.displayListReload(arrParam);
+    };
+
+    LIST.buildReloadRequest = function(){
+        // Get all selected filters
+        var selectedFilters = LIST.getSelectedReloadFilters();
+        // Build param request based on selected filters
+        var request = "";
+        var i = 0;
+        for( var key in selectedFilters){
+            if (selectedFilters.hasOwnProperty(key)) {
+                if(selectedFilters[key] !== ""){
+                    if(i!==0){ request += "&"; }
+                    request += key+"="+selectedFilters[key];
+                    i++;
+                }
+            }
+        }
+        return request;
+    };
+
+    LIST.displayListReload = function ($params){
+
+        var request = {};
+        request["response_type"] = 'ajax';
+
+        for (var key in $params){
+            if($params[key] !== null){
+            request[key] = $params[key];
+            }
+        }
+
+        var ajaxContainer = $('.list-reload');
+        ajaxContainer.html("").addClass("loading");
+        if (ajaxContainer.length){
+            var ajaxPath = ajaxContainer.attr("data-ajax-path");
+            $.ajax({
+                type: 'GET',
+                url: ajaxPath,
+                data: request,
+                success: function(result) {
+                    LIST.displayList(ajaxContainer, result);
+                }
+            });
+
+        }
+    };
+
+    LIST.getParameterByName = function(name, url) {
+        var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+        return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+    };
+
+
+
+
+    /* ---------------------- */
+    /* FILTERS STYLE */
+    /* ---------------------- */
+    var FILTERSTYLE = {};
+    FILTERSTYLE.changeAnyToAll = function($select){
+        $select.children().each(function( index, element ) {
+            var option = $(this);
+            if( option.attr("value") === "All" ){
+                option.text("All");
+                option.attr("value","");
+            }
+        });
+    };
+    FILTERSTYLE.changeSelectToLi = function($select,$isVertical){
+
+        // Hide Select
+        $select.addClass("hidden");
+
+
+        // Create UL item
+        var nbOptions = $select.children().length;
+        var ulType = ($isVertical) ? "filter-vertical" : "filter-horizontal";
+        var ulItem = $('<ul>').addClass(ulType+" "+"filter-items-"+nbOptions).attr("data-name",$select.attr("name"));
+
+
+        // Create li for each options
+        $select.children().each(function( index, element ) {
+            var option = $(this);
+            // Create LI item
+            var liItem = $('<li>');
+            var textItem = option.text();
+            var valueItem = option.attr("value");
+            if(option.attr("value") === ""){ valueItem = "";}
+            // Create link item
+            var aItem = $('<a>')
+                    .attr('href','#'+valueItem)
+                    .text(textItem)
+                    .appendTo(liItem);
+            // add active class if selected by default
+            if(option.is(':selected')){aItem.addClass("active");}
+            if($isVertical && index === 1){
+                liItem.prependTo(ulItem);
+            }else{
+                liItem.appendTo(ulItem);
+            }
+
+        });
+
+        // Add new UL list after select input
+        $select.after(ulItem);
+
+    };
+
+
+
+    FILTERSTYLE.threeOptions = function ($select){
+
+        // Add Verical filter
+        FILTERSTYLE.changeSelectToLi($select, true);
+
+
+    };
+
+
+
+    FILTERSTYLE.uniqueOption = function ($select){
+
+        // Add Horizontal filter
+        FILTERSTYLE.changeSelectToLi($select, false);
+
+    };
+
+
+
+    FILTERSTYLE.defaultSelect = function ($select){
+
+    };
+
+
+
+    var $list   = $('.isotope-options'),
+    $select = $('<select />');
+
+    $list.children('li').each(function(index) {
+	$select.append($('<option />').attr('value', index).html($(this).html()));
+    });
+    
+    $list.replaceWith($select);
+    
+    $('a.filterbutton').contents().unwrap();
+
+
+    /* ---------------------- */
+    /* NAVIGATION AND SUB-NAVIGATION  */
+    /* ---------------------- */
+    var MENU = {};
+    MENU.subnav =  $("#subnav");
+    MENU.isNavOpen = false;
+    MENU.openSub = function(){
+        this.subnav.addClass("subnav-open");
+        this.subnav.slideDown(500, "easeOutExpo");
+        this.isNavOpen = true;
+    };
+    MENU.closeSub = function(){
+        this.subnav.removeClass("subnav-open");
+        this.subnav.slideUp(500, "easeOutExpo");
+        this.isNavOpen = false;
+    };
+    MENU.displaySubContent = function($section){
+        // Get submenu to display
+        var subMenu = $('#subnav').find('.sub-'+$section);
+        // Hide all oher section
+        $('#subnav .sub-main-nav').hide(0);
+        // Display appropriate section
+        subMenu.fadeIn(250);
+    };
+    MENU.hideSubContent = function(){
+        $('#subnav .sub-main-nav').fadeOut(250);
+    };
+    MENU.clearOpenNav = function(){
+        $('#main-menu ul.menu li a').removeClass("open");
+    };
+
+
+
+
+
+    /* ---------------------- */
+    /* HEADER AND PARALLAX  */
+    /* ---------------------- */
+    var PARALLAX = {};
+    PARALLAX.text = $('#banner-text');
+    PARALLAX.banner = $('#banner-content');
+    PARALLAX.scrollBanner = function(){
+        // Get the scoll position of the page
+        var scrollPos = $(window).scrollTop();
+        if (MENU.isNavOpen){ // if nav open don't parallax the background
+            var tabHeight =  MENU.subnav.height();
+            //Scroll and fade out the banner text
+            this.text.css({
+                marginTop : tabHeight -(scrollPos/3)+"px",
+                opacity : 1 - (scrollPos/300)
+            });
+            //Scroll the background of the banner
+            this.banner.css({
+                backgroundPositionY : tabHeight -  scrollPos +"px"
+            });
+        }else{
+            //Scroll and fade out the banner text
+            this.text.css({
+                marginTop : -(scrollPos/3)+"px",
+                opacity : 1-(scrollPos/300)
+            });
+            //Scroll the background of the banner
+            this.banner.css({
+                backgroundPositionY : - ( scrollPos /6 )+"px"
+            });
+        }
+    };
+    PARALLAX.moveTabBanner = function($value){
+        //Scroll and fade out the banner text
+        this.text.animate({
+            marginTop : $value+"px"
+        }, 500, "easeOutExpo" );
+        //Scroll the background of the banner
+        this.banner.animate({
+            backgroundPositionY: $value+"px"
+        }, 500, "easeOutExpo" );
+    };
+    PARALLAX.loadImage = function($bannerContent){
+
+        var imageUrl = $bannerContent.attr("data-bg-image");
+        var imgBanner = $("<img />",{ "src":imageUrl });
+
+        // Load the image and add it to content as background
+        imgBanner.load(function(){
+            if (!this.complete || typeof this.naturalWidth === "undefined" || this.naturalWidth === 0) {
+                // Broken Image
+            } else {
+                $bannerContent.css('background-image', 'url(' + imageUrl + ')');
+                $bannerContent.animate({ opacity: 1}, 250);
+            }
+        });
+    };
+	PARALLAX.fullScreenScroll = function($elem){
+		$elem.each(function(){
+			var $obj = $(this); // assigning the object
+			PARALLAX.resizeContent($obj);
+			$(window).resize( function(){
+				PARALLAX.resizeContent($obj)
+			});
+			$(window).scroll(function() {
+				var $yPos = -(($(window).scrollTop()-$obj.offset().top) / $obj.data('speed'));
+				var $coords = '50% '+ $yPos + 'px';
+				$obj.css({ backgroundPosition: $coords });
+			});
+		});
+	};
+	PARALLAX.resizeContent = function($elem){
+		$height = $(window).height();
+		if($height < 890){
+			$elem.height($height).children('.content').height($height);
+		}else{
+			$elem.height(890).children('.content').height(890);
+		}
+	}
+
+
+
+
+
+    /* ---------------------- */
+    /* PHOTOS AND VIDEOS GALLERY  */
+    /* ---------------------- */
+    var GALLERY = {};
+    GALLERY.currentMedia;
+    GALLERY.sharingContainer = $("#squawOverlay .custom_sharing");
+    GALLERY.mediaContent = $("#squawOverlay .media-content");
+    GALLERY.show = function ( $link ){
+        $("#squawOverlay").fadeIn("250");
+        $("body").css("overflow","hidden");
+        GALLERY.buildMedia($link);
+    };
+    GALLERY.hide = function (){
+      $("#squawOverlay").fadeOut("250", function(){
+          $("body").removeAttr("style");
+          $(this).removeAttr("style");
+          GALLERY.cleanMedia();
+      });
+    };
+    GALLERY.buildMedia = function($link){
+
+        var src_large = $link.attr("data-media-large"),
+            type = $link.attr("data-media-type"),
+            title = $link.attr("data-media-title"),
+            alt = $link.attr("data-media-alt"),
+            href = $link.attr("href"),
+            img = $link.attr("data-media-small"),
+	    video_id = $link.attr("id"),
+            content, caption;
+
+        GALLERY.sharingContainer.attr({
+            "data-url": window.location.protocol+"//"+window.location.host+href,
+            "data-img": img,
+            "data-title": title,
+            "data-description": title
+        });
+
+
+        if( type === "image"){ // Image
+
+            content = $("<img />",{
+                "src":src_large,
+                "alt": alt
+            });
+
+            if (title != '') {
+                caption = $('<div class="media-caption-wrapper"><div class="media-caption">'+title+'</div></div>');
+            }else {
+                caption = $('<div class="media-caption-wrapper"></div>');
+            }
+
+            // Load the image and add it to content
+            content.load(function(){
+                if (!this.complete || typeof this.naturalWidth === "undefined" || this.naturalWidth === 0) {
+                    // Broken Image
+                } else {
+
+                    if( type === "image"){
+
+                        GALLERY.mediaContent.css('opacity', 0);
+                        GALLERY.mediaContent.html(content);
+                        GALLERY.mediaContent.append(caption);
+                        GALLERY.mediaContent.animate({ opacity: 1}, 250);
+
+                    }
+
+                }
+            });
+
+        }else{// Video
+
+            content = $("<iframe />",{
+                "src":src_large,
+                "width": 1000,
+                "height": 563,
+                "frameborder": 0,
+                //"webkitallowfullscreen": true,
+                //"mozallowfullscreen": true,
+                //"allowfullscreen": true,
+		//"id": 'vimeo-player-1',
+		"id": video_id,
+		"data-bounce": false,
+		"data-progress": true,
+		"data-seek": true
+            });
+
+            // Add video to content
+            GALLERY.mediaContent.html(content);
+
+        }
+
+
+
+
+        GALLERY.currentMedia = $link;
+
+    };
+    GALLERY.cleanMedia = function(){
+        GALLERY.mediaContent.html("");
+    };
+    GALLERY.changeMedia = function($state){
+
+        var current = GALLERY.currentMedia,
+            liParent = current.parent().parent().parent(),
+            ulParent = liParent.parent("ul"),
+            currentIndex = liParent.index(),
+            nbLi = ulParent.children().length,
+            newLiItem;
+
+        // If prev and not first one
+        if ($state === "prev" && currentIndex > 0){
+            newLiItem = liParent.prev();
+        }
+
+        // If prev and first one (go last)
+        if ($state === "prev" && currentIndex <= 0){
+            newLiItem = ulParent.find('li').eq( nbLi - 1);
+        }
+
+        // If next and not last one
+        if ($state === "next" && currentIndex < (nbLi - 1) ){
+            newLiItem = liParent.next();
+        }
+
+        // If next and last one (go first)
+        if ($state === "next" && currentIndex >= (nbLi - 1) ) {
+            newLiItem = ulParent.find('li').eq( 0 );
+        }
+
+        GALLERY.buildMedia(newLiItem.find("a"));
+
+    };
+    GALLERY.shareFB = function ($url, $img, $title, $description, $backURL ){
+        var fb_link = "https://www.facebook.com/dialog/feed?app_id=638626099568776&display=popup";
+        var fb_url = fb_link + "&link=" + $url + "&picture=" + $img + "&name" + $title + "&description" + $title + "&redirect_uri=" + $backURL + "/close.html";
+        window.open( fb_url, "", "height=236, width=516");
+    };
+    GALLERY.sharePin = function ($url, $img, $title ){
+        var pin_link = "http://pinterest.com/pin/create/button/?url=";
+        var pin_url = pin_link + encodeURIComponent($url) + "&media=" + encodeURIComponent($img) + "&description" + encodeURIComponent($title);
+        window.open( pin_url );
+    };
+    GALLERY.shareTwit = function ($url){
+        var twitter_link = "https://twitter.com/share?url=";
+        var twitter_url = twitter_link + encodeURIComponent($url)
+        window.open( twitter_url );
+    };
+    
+
+
+
+    /* ---------------------- */
+    /* BOOKING WIDGET */
+    /* ---------------------- */
+    var TABS = {};
+    TABS.initTab = function(){
+        if(DEVICE.isMobile){
+            var activeH3 = $("#booking-widget").find("h3.active");
+            var rel = activeH3.attr('rel');
+            var activeTab = activeH3.siblings('#'+rel);
+            activeTab.slideUp(0);
+            activeH3.addClass("hiddenMobile");
+        }else{
+            var activeH3 = $("#booking-widget").find("h3.hiddenMobile");
+            var rel = activeH3.attr('rel');
+            var activeTab = activeH3.siblings('#'+rel);
+            activeH3.removeClass("hiddenMobile");
+            if(activeTab.css("display") === "none"){
+                activeTab.removeAttr("style");
+            }
+        }
+    };
+    TABS.changeTab = function ($link){
+        var rel = $link.attr('rel');
+        $link.removeClass("hiddenMobile").addClass('active').siblings('.active').removeClass('active');
+        if (DEVICE.isMobile && !$link.closest('.grooming-trails').length > 0 && !$link.closest('.weather-forecast').length > 0){
+            var siblings = $link.siblings('.content:not(#'+rel+')');
+
+            if (siblings.length > 0) {
+                siblings.slideUp('fast', function(){
+                    $link.next().slideDown('fast', function(){
+                        $("html, body").animate({ scrollTop: $('h3[rel*="'+rel+'"]').offset().top },'fast');
+                    });
+                });
+            }else {
+                $link.next().slideDown('fast', function(){
+                    $("html, body").animate({ scrollTop: $('h3[rel*="'+rel+'"]').offset().top },'fast');
+                });
+            }
+        } else{
+             $link.siblings('.content:not(#'+rel+')').hide();
+             $link.next().fadeIn();
+        }
+    };
+    TABS.changejQueryTabs = function ($state){
+        var tabID = LIST.getParameterByName("tab", $state.hash);
+        var currentTab = $("#"+tabID);
+        var currentTabIndex = currentTab.parent().index();
+        var parentTabs = currentTab.parents(".ui-tabs");
+        parentTabs.tabs({ active: currentTabIndex });
+    };
+
+    
+
+    /* Simple show / hide for upcoming events */
+    $('body').on('click', ".upcoming-dates-show-more-btn", function(e) {
+      e.preventDefault();
+      $('.upcoming-dates-item').show();
+      $(this).hide();
+    });
+
+    /* Scroll to btn for events */
+    $('body').on('click', ".show-all-dates-btn", function(e) {
+      e.preventDefault();
+      $('html, body').animate({
+        scrollTop: $("#upcoming-dates-title").offset().top
+      }, 500);
+    });
+    
+    $('body').on('click', ".trail-maps-load-btn", function(e) {
+      e.preventDefault();
+      var trailMapUrl = $(this).attr('href');
+      $('#trail-map-map-wrapper').attr('src', trailMapUrl);
+      $('.trail-maps-load-btn').removeClass('active');
+      $(this).addClass('active');
+    });
+    /* Add ID attribute to change size of iframe based on map shown */
+    $('body').on('click', ".trail-maps-load-btn", function(e) {
+      e.preventDefault();
+      var trailMapSize = $(this).attr('id');
+      $('.trail-maps-wrapper').attr('id', trailMapSize);
+    });
+    
+    /* Trail maps on the Grooming & Trails page */
+    $('body').on('click', ".trail-maps-load-btn", function(e) {
+      e.preventDefault();
+      var trailMapUrl = $(this).attr('href');
+      $('#trail-map-map-wrapper-2').attr('src', trailMapUrl);
+      $('.trail-maps-load-btn').removeClass('active');
+      $(this).addClass('active');
+    });
+    
+    $('body').on('click', ".trail-maps-load-btn", function(e) {
+      e.preventDefault();
+      var trailMapUrl = $(this).attr('href');
+      $('#trail-map-map-wrapper-3').attr('src', trailMapUrl);
+      $('.trail-maps-load-btn').removeClass('active');
+      $(this).addClass('active');
+    });
+     
+    $('body').on('click', ".tab.alpine", function(e) {
+      e.preventDefault();
+      var trailMapUrl = $('.tm-alpine-front-btn').attr('href');
+      $('#trail-map-map-wrapper-3').attr('src', trailMapUrl);
+      $('.trail-maps-load-btn').removeClass('active');
+      $('.tm-alpine-front-btn').addClass('active');
+      var trailMapSize = $('.tm-alpine-front-btn').attr('id');
+      $('.trail-maps-wrapper').attr('id', trailMapSize);
+    });
+    $('body').on('click', ".tab.squaw", function(e) {
+      e.preventDefault();
+      var trailMapUrl = $('.tm-squaw-front-btn').attr('href');
+      $('#trail-map-map-wrapper-2').attr('src', trailMapUrl);
+      $('.trail-maps-load-btn').removeClass('active');
+      $('.tm-squaw-front-btn').addClass('active');
+      var trailMapSize = $('.tm-squaw-front-btn').attr('id');
+      $('.trail-maps-wrapper').attr('id', trailMapSize);
+    });
+    
+    /* Show/hide trail maps on the Grooming & Trails page */    
+    $('#trail-map-wrapper h3').click(function () {
+	$('.edit-toggle').text('Hide trail maps');
+	$('.ui-state-active').find('.edit-toggle').text('Show trail maps');
+    });
+    $('#trail-map-wrapper-2 h3').click(function () {
+	$('.edit-toggle-2').text('Hide trail maps');
+	$('.ui-state-active').find('.edit-toggle-2').text('Show trail maps');
+    });
+    $('.trail-map-wrapper').accordion({
+        header: "h3",
+        collapsible: true,
+	heightStyle: "content"
+    });
+    /* populate URL with show/hide switch between locations */
+    $('body').on('click', "#trail-map-wrapper-2 h3", function(e) {
+      e.preventDefault();
+      var trailMapUrl = $('.tm-alpine-front-btn').attr('href');
+      $('#trail-map-map-wrapper-3').attr('src', trailMapUrl);
+      $('.trail-maps-load-btn').removeClass('active');
+      $('.tm-alpine-front-btn').addClass('active');
+      var trailMapSize = $('.tm-alpine-front-btn').attr('id');
+      $('.trail-maps-wrapper').attr('id', trailMapSize);
+    });
+    $('body').on('click', "#trail-map-wrapper h3", function(e) {
+      e.preventDefault();
+      var trailMapUrl = $('.tm-squaw-front-btn').attr('href');
+      $('#trail-map-map-wrapper-2').attr('src', trailMapUrl);
+      $('.trail-maps-load-btn').removeClass('active');
+      $('.tm-squaw-front-btn').addClass('active');
+      var trailMapSize = $('.tm-squaw-front-btn').attr('id');
+      $('.trail-maps-wrapper').attr('id', trailMapSize);
+    });
+    
+
+
+    // Adding countdown timer if possible
+    if ($('.timer').length !== 0){
+        var timer = $('.timer');
+        var timerTimeArr = timer.data('endtime').split("-");
+        var timerYear = parseInt(timerTimeArr[0]);
+        var timerMonth = parseInt(timerTimeArr[1]) - 1;
+        var timerDay = parseInt(timerTimeArr[2]);
+        var timerHour = parseInt(timerTimeArr[3]);
+        var timerMin = parseInt(timerTimeArr[4]);
+        var timerSec = parseInt(timerTimeArr[5]);
+        var timerDate = new Date(timerYear, timerMonth, timerDay, timerHour, timerMin, timerSec);
+        timer.countdown({until: timerDate, timezone: -8, layout:'<span class="countdown-row countdown-show4">{d<}<span class="countdown-section"><span class="countdown-amount">{dnn}</span><span class="countdown-period">{dl}</span></span>{d>}<span class="countdown-section"><span class="countdown-amount">{hnn}</span><span class="countdown-period">{hl}</span></span><span class="countdown-section"><span class="countdown-amount">{mnn}</span><span class="countdown-period">{ml}</span></span><span class="countdown-section"><span class="countdown-amount">{snn}</span><span class="countdown-period">{sl}</span></span></span>'});
+    }
+    
+    // Adding countdown timer if possible
+    if ($('.timer2').length !== 0){
+        var timer = $('.timer2');
+        var timerTimeArr = timer.data('endtime').split("-");
+        var timerYear = parseInt(timerTimeArr[0]);
+        var timerMonth = parseInt(timerTimeArr[1]) - 1;
+        var timerDay = parseInt(timerTimeArr[2]);
+        var timerHour = parseInt(timerTimeArr[3]);
+        var timerMin = parseInt(timerTimeArr[4]);
+        var timerSec = parseInt(timerTimeArr[5]);
+        var timerDate = new Date(timerYear, timerMonth, timerDay, timerHour, timerMin, timerSec);
+        timer.countdown({until: timerDate, timezone: -8, layout:'<span class="countdown-row countdown-show4">{d<}<span class="countdown-section"><span class="countdown-amount">{dnn}</span><span class="countdown-period">{dl}</span></span>{d>}<span class="countdown-section"><span class="countdown-amount">{hnn}</span><span class="countdown-period">{hl}</span></span><span class="countdown-section"><span class="countdown-amount">{mnn}</span><span class="countdown-period">{ml}</span></span><span class="countdown-section"><span class="countdown-amount">{snn}</span><span class="countdown-period">{sl}</span></span></span>'});
+    }
+
+
+})(jQuery, Drupal, this, this.document);
+
+
+
+
+
+/* ----------------------------------- */
+/* FORMAT SPINNER TO WORK WITH STRINGS */
+/* ----------------------------------- */
+jQuery.widget("ui.formatSpinner", jQuery.ui.spinner, {
+    options: {
+    },
+    _parse: function (value) {
+        if (typeof value === "string") {
+            return this.options.values.indexOf(value);
+        }
+        return value;
+    },
+    _format: function (value) {
+        //wrap around
+        if (value < 0) {
+            value = this.options.count-1;
+        }
+        if (value > this.options.count-1) {
+            value = 0;
+        }
+        var format = this.options.values[value];
+        return format;
+    },
+});
+
+
+
+
+
